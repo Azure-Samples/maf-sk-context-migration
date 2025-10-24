@@ -1,0 +1,124 @@
+Você é um especialista em frameworks de agentes. Crie uma aplicação Python que demonstre conversação entre dois agentes, comparando Semantic Kernel e Agent Framework.
+
+### Objetivo:
+- Implementar dois agentes que trocam mensagens e compartilham contexto.
+- Mostrar como isso é feito no Semantic Kernel (via histórico de chat) e no Agent Framework (via threads).
+
+Esta implementação é feita na pasta src/agent-conversation.
+
+O arquivo do Semantic Kernel deve estar em sk.py, do agent framework em msf.py, e quaisquer ferramentas devem ser inclusas em tools.py
+
+### Estrutura:
+1. **Configuração do ambiente**
+   - Instale pacotes:
+     - semantic-kernel
+     - agent-framework (ou equivalente)
+     - azure-ai-openai
+     - python-dotenv (para variáveis de ambiente)
+2. **Passos para Semantic Kernel**
+   - Configure um kernel.
+   - Crie duas funções simulando agentes.
+   - Implemente compartilhamento de contexto via histórico de chat.
+3. **Passos para Agent Framework**
+   - Crie dois agentes usando classes primitivas.
+   - Configure threads para conversas isoladas.
+   - Demonstre manipulação dinâmica do contexto sem histórico completo.
+4. **Comparativo**
+   - Imprima logs mostrando diferença entre abordagem declarativa (SK) e threads (AF).
+
+### Componentes:
+- Funções para inicializar agentes.
+- Função para enviar mensagens e atualizar contexto.
+- Função para exibir histórico ou estado atual.
+
+### Saída esperada:
+- Código comentado.
+- Logs mostrando como cada framework gerencia contexto.
+
+Formato: Código Python completo, pronto para execução.
+
+referências:
+
+Semantic Kernel: https://learn.microsoft.com/en-us/semantic-kernel/
+
+Microsoft Agent Framework: https://github.com/microsoft/Agent-Framework-Samples
+
+
+
+
+
+
+
+Crie uma aplicação Python que demonstre engenharia de contexto para um agente específico, comparando Semantic Kernel e Agent Framework.
+
+### Objetivo:
+- Adicionar e remover elementos do contexto durante a execução.
+- Mostrar diferença entre abordagem declarativa (SK) e manipulação direta (AF).
+
+### Estrutura:
+1. **Configuração do ambiente**
+   - Instale pacotes:
+     - semantic-kernel
+     - agent-framework
+     - azure-ai-openai
+     - python-dotenv
+2. **Passos para Semantic Kernel**
+   - Crie um kernel com memória persistente.
+   - Adicione contexto (ex.: instruções adicionais).
+   - Remova contexto manualmente (imperativo).
+3. **Passos para Agent Framework**
+   - Crie um agente com thread.
+   - Adicione contexto dinamicamente em tempo de execução.
+   - Resete ou substitua contexto sem reiniciar agente.
+4. **Comparativo**
+   - Mostre como cada framework lida com mudanças de contexto.
+
+### Componentes:
+- Funções para manipular contexto.
+- Função para resetar ou atualizar contexto.
+- Logs para cada operação.
+
+### Saída esperada:
+- Código Python comentado.
+- Demonstração clara das diferenças.
+
+Formato: Código Python completo, pronto para execução.
+
+
+
+
+Crie uma aplicação Python que demonstre gerenciamento de memória para agentes, usando Cosmos DB como persistência.
+
+### Objetivo:
+- Comparar como Semantic Kernel e Agent Framework resgatam memória persistida.
+- Implementar integração com Cosmos DB para armazenar e recuperar contexto.
+
+### Estrutura:
+1. **Configuração do ambiente**
+   - Instale pacotes:
+     - azure-cosmos
+     - semantic-kernel
+     - agent-framework
+     - azure-ai-openai
+     - python-dotenv
+2. **Passos para Semantic Kernel**
+   - Configure armazenamento de memória no Cosmos DB.
+   - Salve histórico de conversas.
+   - Recupere memória para continuar interação.
+3. **Passos para Agent Framework**
+   - Configure persistência opcional no Cosmos DB.
+   - Salve estado granular (threads).
+   - Recupere memória para reconstruir contexto.
+4. **Comparativo**
+   - Mostre diferença entre persistência baseada em histórico (SK) e granularidade (AF).
+
+### Componentes:
+- Funções para conectar ao Cosmos DB.
+- Funções para salvar e recuperar memória.
+- Logs mostrando operações.
+
+### Saída esperada:
+- Código Python comentado.
+- Demonstração clara das diferenças.
+
+Formato: Código Python completo, pronto para execução.

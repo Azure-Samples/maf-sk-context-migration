@@ -1,0 +1,52 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "MCP Server",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}\\src"
+      },
+      "args": [
+        "mcp_server.main:app",
+        "--reload",
+        "--port",
+        "8000"
+      ],
+      "jinja": true,
+      "justMyCode": false
+    },
+    {
+      "name": "Context Engineering",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}\\src\\context_engineering\\main.py",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}\\src\\context_engineering"
+      },
+      "console": "integratedTerminal",
+      "jinja": true,
+      "justMyCode": false
+    },
+    {
+      "name": "Agent Conversation",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}\\src\\agent_conversation\\main.py",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}\\src\\agent_conversation"
+      },
+      "console": "integratedTerminal",
+      "jinja": true,
+      "justMyCode": false
+    }
+  ]
+}

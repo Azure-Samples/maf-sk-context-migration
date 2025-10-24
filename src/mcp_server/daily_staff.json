@@ -1,0 +1,168 @@
+{  
+  "date_range": {  
+    "start_date": "2025-09-18",  
+    "end_date": "2025-09-27"  
+  },  
+  "staff_schedule": [  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 1,  
+      "name": "Alice Johnson",  
+      "role": "Sales Associate",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 2,  
+      "name": "Bob Smith",  
+      "role": "Cashier",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 3,  
+      "name": "Charlie Brown",  
+      "role": "Inventory Manager",  
+      "shift": "Full Day",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 4,  
+      "name": "Diana Lee",  
+      "role": "Floor Supervisor",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 5,  
+      "name": "Evan Davis",  
+      "role": "Sales Associate",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 6,  
+      "name": "Frank Thomas",  
+      "role": "Customer Support",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 7,  
+      "name": "Grace Hill",  
+      "role": "Cleaner",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 8,  
+      "name": "Henry Adams",  
+      "role": "Security",  
+      "shift": "Full Day",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 9,  
+      "name": "Isla Green",  
+      "role": "Sales Associate",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 10,  
+      "name": "Jack Carter",  
+      "role": "Cashier",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 1,  
+      "name": "Alice Johnson",  
+      "role": "Sales Associate",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 2,  
+      "name": "Bob Smith",  
+      "role": "Cashier",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 3,  
+      "name": "Charlie Brown",  
+      "role": "Inventory Manager",  
+      "shift": "Full Day",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 4,  
+      "name": "Diana Lee",  
+      "role": "Floor Supervisor",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 5,  
+      "name": "Evan Davis",  
+      "role": "Sales Associate",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 6,  
+      "name": "Frank Thomas",  
+      "role": "Customer Support",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 7,  
+      "name": "Grace Hill",  
+      "role": "Cleaner",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 8,  
+      "name": "Henry Adams",  
+      "role": "Security",  
+      "shift": "Full Day",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 9,  
+      "name": "Isla Green",  
+      "role": "Sales Associate",  
+      "shift": "Morning",  
+      "status": "Active"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 10,  
+      "name": "Jack Carter",  
+      "role": "Cashier",  
+      "shift": "Afternoon",  
+      "status": "Active"  
+    }
+  ]  
+}

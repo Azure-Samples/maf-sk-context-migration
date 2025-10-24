@@ -1,0 +1,98 @@
+{  
+  "date_range": {
+    "start_date": "2025-09-18",  
+    "end_date": "2025-09-27"  
+  },  
+  "staff_updates": [  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 1,  
+      "name": "Alice Johnson",  
+      "update_type": "Shift Change",  
+      "details": "Shift updated from Morning to Afternoon",  
+      "updated_by": "Manager",  
+      "timestamp": "2025-09-18T08:30:00Z"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 2,  
+      "name": "Bob Smith",  
+      "update_type": "Absence",  
+      "details": "Called in sick for the day",  
+      "updated_by": "Bob Smith",  
+      "timestamp": "2025-09-18T07:15:00Z"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 3,  
+      "name": "Charlie Brown",  
+      "update_type": "Role Change",  
+      "details": "Promoted to Floor Supervisor",  
+      "updated_by": "Manager",  
+      "timestamp": "2025-09-18T10:00:00Z"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 4,  
+      "name": "Diana Lee",  
+      "update_type": "Shift Extension",  
+      "details": "Shift extended to Full Day due to staff shortage",  
+      "updated_by": "Manager",  
+      "timestamp": "2025-09-18T11:00:00Z"  
+    },  
+    {  
+      "date": "2025-09-18",  
+      "employee_id": 5,  
+      "name": "Evan Davis",  
+      "update_type": "New Hire",  
+      "details": "Joined as Sales Associate, shift assigned to Afternoon",  
+      "updated_by": "HR",  
+      "timestamp": "2025-09-18T09:00:00Z"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 6,  
+      "name": "Frank Thomas",  
+      "update_type": "Shift Change",  
+      "details": "Shift updated from Morning to Full Day",  
+      "updated_by": "Manager",  
+      "timestamp": "2025-09-19T08:30:00Z"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 7,  
+      "name": "Grace Hill",  
+      "update_type": "Absence",  
+      "details": "Called in sick for the day",  
+      "updated_by": "Grace Hill",  
+      "timestamp": "2025-09-19T07:15:00Z"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 8,  
+      "name": "Henry Adams",  
+      "update_type": "Role Change",  
+      "details": "Transferred to another department",  
+      "updated_by": "HR",  
+      "timestamp": "2025-09-19T10:00:00Z"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 9,  
+      "name": "Isla Green",  
+      "update_type": "Shift Extension",  
+      "details": "Shift extended to Full Day due to staff shortage",  
+      "updated_by": "Manager",  
+      "timestamp": "2025-09-19T11:00:00Z"  
+    },  
+    {  
+      "date": "2025-09-19",  
+      "employee_id": 10,  
+      "name": "Jack Carter",  
+      "update_type": "New Hire",  
+      "details": "Joined as Cashier, shift assigned to Morning",  
+      "updated_by": "HR",  
+      "timestamp": "2025-09-19T09:00:00Z"  
+    }
+  ]  
+}  

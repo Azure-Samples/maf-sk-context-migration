@@ -105,6 +105,7 @@ StyleCopReport.xml
 *.tmp_proj
 *_wpftmp.csproj
 *.log
+*.log*
 *.tlog
 *.vspscc
 *.vssscc
@@ -112,6 +113,8 @@ StyleCopReport.xml
 *.pidb
 *.svclog
 *.scc
+*.egg*
+.next/
 
 # Chutzpah Test files
 _Chutzpah*
@@ -397,12 +400,10 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # VS Code files for those working on multiple tools
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/extensions.json
+.vscode/*.code-snippets
 
 # Local History for Visual Studio Code
 .history/
@@ -416,3 +417,11 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+transliteration*
+*.jsonl
+.terraform*
+.data*
+.venv*
+infra/target*
+junk/
