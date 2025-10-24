@@ -40,7 +40,7 @@ def ensure_azure_ai_settings() -> AzureAIAgentSettings:
 
 
 def _resolve_polling_options() -> RunPollingOptions:
-    raw_timeout = os.getenv("AZURE_AI_AGENT_POLLING_TIMEOUT_SECONDS")
+    raw_timeout: str | None = os.getenv("AZURE_AI_AGENT_POLLING_TIMEOUT_SECONDS")
     timeout_seconds = DEFAULT_POLLING_TIMEOUT_SECONDS
     if raw_timeout:
         try:

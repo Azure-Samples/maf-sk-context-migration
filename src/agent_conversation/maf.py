@@ -17,6 +17,7 @@ except ImportError as exc:  # pragma: no cover - surface dependency issues faste
 
 from agent_conversation.scenario_definitions import ScenarioConfig
 from agent_conversation.strategy import FrameworkConversationResult
+from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoiceBehavior
 from agent_conversation.tools import (
     AGENT_FRAMEWORK_TOOLS,
     OperationTracker,
