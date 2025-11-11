@@ -1,0 +1,29 @@
+kind: Workflow
+name: quick_schedule_review
+description: Quick triage that calls schedule, data fusion, and document specialists.
+trigger:
+  kind: OnConversationStart
+  id: quick_schedule_review_trigger
+  actions:
+    - kind: SetProperty
+      id: seed_quick
+      property: Turn.quickSeed
+      value: =Concatenate("Review the staffing schedule for ", Coalesce(Turn.target_date, "2025-11-15"), " and outline gaps for job '", Coalesce(Turn.job, "schedule_allocation"), "'. Confirm hours, coverage, and any critical shifts.")
+    - kind: SendActivity
+      id: deliver_seed
+      activity: =Turn.quickSeed
+    - kind: InvokeAgent
+      id: schedule_analysis
+      agent: Schedule Analyst
+      resultProperty: Turn.scheduleSummary
+    - kind: InvokeAgent
+      id: data_fusion
+      agent: Data Fusion Analyst
+      resultProperty: Turn.dataSummary
+    - kind: InvokeAgent
+      id: document_reference
+      agent: Knowledge Specialist
+      resultProperty: Turn.playbookGuidance
+    - kind: SendActivity
+      id: finalize_quick
+      activity: =Concatenate("Quick assessment complete. Summary available via workflow output.")

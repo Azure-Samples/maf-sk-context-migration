@@ -1,139 +1,268 @@
-"""FastAPI MCP server exposing workforce optimisation insights."""
+"""FastMCP server exposing workforce staffing insights."""
 from __future__ import annotations
 
+import contextlib
+import json
+import logging
 from datetime import date
-from typing import List, Optional
+from typing import Any, Dict, Iterable, Optional
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi_mcp import FastApiMCP
+from starlette.applications import Starlette
+from starlette.routing import Mount
 
-from .schemas import (
-    HealthStatus,
-    StaffScheduleEntry,
+import anyio
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, ValidationError
+
+from mcp_server.schemas import (
     StaffScheduleSnapshot,
     StaffUpdateSnapshot,
-    StaffUpdate,
     WorkforceCoverageReport,
 )
-from .utils import WorkforceDataHook
-
-
-hook = WorkforceDataHook()
-
-
-app = FastAPI(
-    title="Retail Workforce Intelligence Service",
-    version="2.0.0",
-    description="FastAPI application that surfaces workforce coverage insights as Model Context Protocol tools.",
+from mcp_server.utils import (
+    CoverageReportStrategy,
+    DailyStaffStrategy,
+    DailyStaffUpdatesStrategy,
+    ScheduleStrategy,
+    UpdatesStrategy,
 )
 
-
-@app.get("/health", response_model=HealthStatus, tags=["Diagnostics"], summary="Liveness / readiness probe")
-async def health_check() -> HealthStatus:
-    """Verify that the service can read the workforce schedule dataset."""
-
-    schedule = hook.get_schedule()
-    return HealthStatus(records=len(schedule.staff_schedule))
+logger = logging.getLogger("mcp_server")
 
 
-@app.get(
-    "/workforce/schedule",
-    response_model=StaffScheduleSnapshot,
-    tags=["Workforce"],
-    summary="Return the staffing schedule snapshot",
-    operation_id="getstaffschedule",
-)
-async def workforce_schedule() -> StaffScheduleSnapshot:
-    """Return the complete staffing schedule snapshot, including the active date range."""
+class _SuppressStreamableHttpNoise(logging.Filter):
+    """Drop expected ClosedResourceError noise from stateless transports."""
 
-    return hook.get_schedule()
+    _SUPPRESSED_EXCEPTIONS = (anyio.ClosedResourceError, anyio.BrokenResourceError)
 
-
-@app.get(
-    "/workforce/updates",
-    response_model=StaffUpdateSnapshot,
-    tags=["Workforce"],
-    summary="Return the staffing updates snapshot",
-    operation_id="getstaffupdates",
-)
-async def workforce_updates() -> StaffUpdateSnapshot:
-    """Return the full set of staffing updates collected across the reporting window."""
-
-    return hook.get_updates()
+    def filter(self, record: logging.LogRecord) -> bool:  # type: ignore[override]
+        exc_type = record.exc_info[0] if record.exc_info else None
+        if isinstance(exc_type, type) and issubclass(exc_type, self._SUPPRESSED_EXCEPTIONS):
+            return False
+        return True
 
 
-@app.get(
-    "/workforce/daily-staff",
-    response_model=List[StaffScheduleEntry],
-    tags=["Workforce"],
-    summary="Return the list of scheduled employees for a specific day",
-    operation_id="getdailystaff",
-)
-async def daily_staff(
-    target_date: date = Query(..., description="ISO date to retrieve staffing information for (YYYY-MM-DD)."),
-) -> List[StaffScheduleEntry]:
-    """Return all employees scheduled to work on the requested date."""
-
-    entries = hook.get_daily_staff(target_date)
-    if not entries:
-        raise HTTPException(status_code=404, detail=f"No staffing records found for {target_date}.")
-    return entries
+logging.getLogger("mcp.server.streamable_http").addFilter(_SuppressStreamableHttpNoise())
 
 
-@app.get(
-    "/workforce/daily-staff-updates",
-    response_model=List[StaffUpdate],
-    tags=["Workforce"],
-    summary="Return staffing updates recorded for a specific day",
-    operation_id="getdailystaffupdates",
-)
-async def daily_staff_updates(
-    target_date: date = Query(..., description="ISO date to retrieve staffing updates for (YYYY-MM-DD)."),
-) -> List[StaffUpdate]:
-    """Return every staffing update logged for the requested date."""
+class DailyStaffRequest(BaseModel):
+    """Input payload for date-specific staffing queries."""
 
-    updates = hook.get_daily_staff_updates(target_date)
-    if not updates:
-        raise HTTPException(status_code=404, detail=f"No staffing updates found for {target_date}.")
-    return updates
+    date: Optional[date] = None
 
 
-@app.get(
-    "/workforce/coverage",
-    response_model=WorkforceCoverageReport,
-    tags=["Workforce"],
-    summary="Evaluate staffing coverage and provide optimisation suggestions",
-    operation_id="getdailystaffcoverage",
-)
-async def workforce_coverage(
-    date_filter: Optional[str] = Query(None, description="Optional ISO date filter (YYYY-MM-DD)."),
-    role: Optional[str] = Query(None, description="Optional role filter."),
-    shift: Optional[str] = Query(None, description="Optional shift filter."),
-) -> WorkforceCoverageReport:
-    """Return a coverage report that merges the baseline schedule with staffing updates."""
+class CoverageReportRequest(BaseModel):
+    """Optional filters when generating coverage insights."""
 
+    date: Optional[date] = None
+    role: Optional[str] = None
+    shift: Optional[str] = None
+
+
+def _dump_payload(payload: Any) -> Any:
+    """Convert Pydantic models into JSON-serialisable structures."""
+
+    if isinstance(payload, BaseModel):
+        return payload.model_dump(mode="json")
+    if isinstance(payload, dict):
+        return {key: _dump_payload(value) for key, value in payload.items()}
+    if isinstance(payload, Iterable) and not isinstance(payload, (str, bytes)):
+        return [_dump_payload(item) for item in payload]
+    return payload
+
+
+def _parse_payload(model: type[BaseModel], payload: Optional[Dict[str, Any]] = None) -> BaseModel:
     try:
-        report = hook.coverage_report(date_filter=date_filter, role=role, shift=shift)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    if not report.insights:
-        raise HTTPException(status_code=404, detail="No staffing insights available for the supplied filters.")
-    return report
+        return model.model_validate(payload or {})
+    except ValidationError as exc:
+        details = ", ".join(err.get("msg", "Invalid field") for err in exc.errors()) if exc.errors() else "Invalid input payload."
+        logger.warning("Validation error for %s: %s", model.__name__, details)
+        raise ValueError(details) from exc
 
 
-mcp_bridge = FastApiMCP(
-    fastapi=app,
+def _resolve_target_date(requested: Optional[date]) -> date:
+    if requested is not None:
+        return requested
+    snapshot = ScheduleStrategy().execute()
+    return snapshot.date_range.start_date
+
+
+workforce_mcp = FastMCP(
     name="RetailIntelligenceMCP",
-    description="Retail workforce staffing insights exposed via FastAPI and MCP tools.",
+    instructions="Retail workforce staffing insights exposed via MCP tools.",
+    json_response=True,
+    stateless_http=True
 )
-mcp_bridge.mount_http(mount_path="/mcp")
 
 
-def _main() -> None:
+LEGACY_METHOD_ALIASES: dict[str, tuple[str, Optional[Dict[str, Any]]]] = {
+    "mcp.initialize": (
+        "initialize",
+        {
+            "protocolVersion": "1.0",
+            "clientInfo": {"name": "legacy-mcp-client", "version": "0.1"},
+            "capabilities": {
+                "roots": {"listChanged": False},
+                "sampling": {},
+            },
+        },
+    ),
+    "mcp.ping": ("ping", {}),
+    "mcp.list_tools": ("tools/list", {}),
+    "mcp.call_tool": ("tools/call", None),
+    "mcp.list_resources": ("resources/list", {}),
+    "mcp.read_resource": ("resources/read", None),
+    "mcp.subscribe_resource": ("resources/subscribe", None),
+    "mcp.unsubscribe_resource": ("resources/unsubscribe", None),
+    "mcp.list_resource_templates": ("resources/templates/list", {}),
+    "mcp.list_prompts": ("prompts/list", {}),
+    "mcp.get_prompt": ("prompts/get", None),
+    "mcp.complete": ("completion/complete", None),
+    "mcp.set_level": ("logging/setLevel", None),
+}
+
+
+class LegacyMCPShim:
+    """Adapt older MCP method names emitted by some clients."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and scope.get("method") == "POST" and scope.get("path", "") == "/mcp":
+            body_chunks: list[bytes] = []
+            more_body = True
+            while more_body:
+                message = await receive()
+                body_chunks.append(message.get("body", b""))
+                more_body = message.get("more_body", False)
+
+            raw_body = b"".join(body_chunks)
+            try:
+                payload = json.loads(raw_body.decode() or "{}")
+            except json.JSONDecodeError:
+                payload = None
+
+            if isinstance(payload, dict):
+                method = payload.get("method")
+                if isinstance(method, str) and method in LEGACY_METHOD_ALIASES:
+                    alias, default_params = LEGACY_METHOD_ALIASES[method]
+                    payload["method"] = alias
+                    if default_params is not None:
+                        existing_params = payload.get("params")
+                        if not isinstance(existing_params, dict):
+                            existing_params = {}
+                        payload["params"] = {**default_params, **existing_params}
+                    else:
+                        payload.setdefault("params", {})
+                elif isinstance(method, str) and method.startswith("mcp."):
+                    payload.setdefault("params", {})
+
+                raw_body = json.dumps(payload).encode()
+
+            body_sent = False
+
+            async def wrapped_receive():
+                nonlocal body_sent
+                if not body_sent:
+                    body_sent = True
+                    return {"type": "http.request", "body": raw_body, "more_body": False}
+                return {"type": "http.request", "body": b"", "more_body": False}
+
+            await self.app(scope, wrapped_receive, send)
+            return
+
+        await self.app(scope, receive, send)
+
+
+@workforce_mcp.tool(
+    name="workforce.get_schedule",
+    description="Return the complete staffing schedule snapshot, including the active date range."
+)
+async def get_schedule() -> Dict[str, Any]:
+    snapshot: StaffScheduleSnapshot = ScheduleStrategy().execute()
+    return _dump_payload(snapshot)
+
+
+@workforce_mcp.tool(
+    name="workforce.get_updates",
+    description="Return the full set of staffing updates collected across the reporting window.",
+)
+async def get_updates() -> Dict[str, Any]:
+    updates_snapshot: StaffUpdateSnapshot = UpdatesStrategy().execute()
+    return _dump_payload(updates_snapshot)
+
+
+@workforce_mcp.tool(
+    name="workforce.get_daily_staff",
+    description="Return all employees scheduled to work on the requested date.",
+)
+async def get_daily_staff(payload: Optional[DailyStaffRequest] = None) -> list[Dict[str, Any]]:
+    request: DailyStaffRequest = _parse_payload(DailyStaffRequest, payload)  #type: ignore
+    target_date = _resolve_target_date(request.date)
+    try:
+        entries = DailyStaffStrategy().execute(target_date=target_date)
+    except LookupError as exc:
+        raise ValueError(str(exc)) from exc
+    return _dump_payload(entries)
+
+
+@workforce_mcp.tool(
+    name="workforce.get_daily_staff_updates",
+    description="Return staffing updates recorded for a specific date.",
+)
+async def get_daily_staff_updates(payload: Optional[DailyStaffRequest] = None) -> list[Dict[str, Any]]:
+    request: DailyStaffRequest = _parse_payload(DailyStaffRequest, payload)  #type: ignore
+    target_date = _resolve_target_date(request.date)
+    try:
+        updates = DailyStaffUpdatesStrategy().execute(target_date=target_date)
+    except LookupError as exc:
+        raise ValueError(str(exc)) from exc
+    return _dump_payload(updates)
+
+
+@workforce_mcp.tool(
+    name="workforce.get_coverage",
+    description=(
+        "Evaluate staffing coverage by merging the baseline schedule with workforce updates. "
+        "Optional filters limit the insights to a specific date, role, or shift."
+    )
+)
+async def get_coverage(payload: Optional[CoverageReportRequest] = None) -> Dict[str, Any]:
+    request: CoverageReportRequest = _parse_payload(CoverageReportRequest, payload)  #type: ignore
+    try:
+        report: WorkforceCoverageReport = CoverageReportStrategy().execute(
+            date_filter=request.date,
+            role_filter=request.role,
+            shift_filter=request.shift,
+        )
+    except LookupError as exc:
+        raise ValueError(str(exc)) from exc
+    return _dump_payload(report)
+
+
+mcp_http_app = LegacyMCPShim(workforce_mcp.streamable_http_app())
+
+
+@contextlib.asynccontextmanager
+async def lifespan(_app: Starlette):
+    async with workforce_mcp.session_manager.run():
+        yield
+
+
+app = Starlette(
+    routes=[Mount("/", mcp_http_app)],
+    lifespan=lifespan,
+)
+
+
+def main() -> None:
     import uvicorn
-
-    uvicorn.run("mcp-server.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("mcp_server.main:app", host="0.0.0.0", port=8000, reload=False)
 
 
 if __name__ == "__main__":  # pragma: no cover
-    _main()
+    main()
+
+
+__all__ = ["workforce_mcp", "app", "main"]

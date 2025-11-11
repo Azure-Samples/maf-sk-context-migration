@@ -425,3 +425,6 @@ transliteration*
 .venv*
 infra/target*
 junk/
+add_mcp_to_agent.py
+add_mcp_to_agent_v1.py
+add_mcp_to_agent_v1_1.py

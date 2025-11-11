@@ -1,10 +1,10 @@
-"""Utility hooks for workforce data processing."""
+"""Strategies for workforce data processing."""
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from datetime import date, datetime
-from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, List, Literal, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
 from .schemas import (
     DateRange,
@@ -21,55 +21,75 @@ STAFF_SCHEDULE_PATH = Path(__file__).with_name("daily_staff.json")
 STAFF_UPDATES_PATH = Path(__file__).with_name("daily_updates.json")
 
 
-@lru_cache(maxsize=1)
-def _get_staff_schedule() -> StaffScheduleSnapshot:
+def _load_schedule_snapshot() -> StaffScheduleSnapshot:
     if not STAFF_SCHEDULE_PATH.exists():
         raise FileNotFoundError(f"Staff schedule not found at {STAFF_SCHEDULE_PATH}")
     return StaffScheduleSnapshot.model_validate_json(STAFF_SCHEDULE_PATH.read_text(encoding="utf-8"))
 
 
-@lru_cache(maxsize=1)
-def _get_staff_updates() -> StaffUpdateSnapshot:
+def _load_updates_snapshot() -> StaffUpdateSnapshot:
     if not STAFF_UPDATES_PATH.exists():
         raise FileNotFoundError(f"Staff updates not found at {STAFF_UPDATES_PATH}")
     return StaffUpdateSnapshot.model_validate_json(STAFF_UPDATES_PATH.read_text(encoding="utf-8"))
 
 
-class WorkforceDataHook:
-    """Facade around workforce datasets and derived analytics."""
+class WorkforceStrategy(ABC):
+    """Base strategy interface for workforce data operations."""
 
-    def get_schedule(self) -> StaffScheduleSnapshot:
-        """Return the cached staffing schedule snapshot."""
+    @abstractmethod
+    def execute(self, **kwargs: Any) -> Any:
+        """Run the strategy and return a serialisable payload."""
 
-        return _get_staff_schedule()
 
-    def get_updates(self) -> StaffUpdateSnapshot:
-        """Return the cached staffing updates snapshot."""
+class ScheduleStrategy(WorkforceStrategy):
+    """Load the full staffing schedule snapshot."""
 
-        return _get_staff_updates()
+    def execute(self, **kwargs: Any) -> StaffScheduleSnapshot:  # noqa: ARG002 - strategies ignore kwargs
+        return _load_schedule_snapshot()
 
-    def get_daily_staff(self, target_date: date) -> List[StaffScheduleEntry]:
-        """Return employees scheduled to work on the requested date."""
 
-        schedule = self.get_schedule()
-        return [entry for entry in schedule.staff_schedule if entry.date == target_date]
+class UpdatesStrategy(WorkforceStrategy):
+    """Load the full staffing updates snapshot."""
 
-    def get_daily_staff_updates(self, target_date: date) -> List[StaffUpdate]:
-        """Return staffing updates recorded for the requested date."""
+    def execute(self, **kwargs: Any) -> StaffUpdateSnapshot:  # noqa: ARG002 - strategies ignore kwargs
+        return _load_updates_snapshot()
 
-        updates_snapshot = self.get_updates()
-        return [update for update in updates_snapshot.staff_updates if update.date == target_date]
 
-    def coverage_report(
+class DailyStaffStrategy(WorkforceStrategy):
+    """Retrieve scheduled employees for a specific date."""
+
+    def execute(self, *, target_date: date, **_: Any) -> List[StaffScheduleEntry]:
+        schedule = _load_schedule_snapshot()
+        entries = [entry for entry in schedule.staff_schedule if entry.date == target_date]
+        if not entries:
+            raise LookupError(f"No staffing records found for {target_date.isoformat()}.")
+        return entries
+
+
+class DailyStaffUpdatesStrategy(WorkforceStrategy):
+    """Retrieve staffing updates recorded for a specific date."""
+
+    def execute(self, *, target_date: date, **_: Any) -> List[StaffUpdate]:
+        updates_snapshot = _load_updates_snapshot()
+        updates = [update for update in updates_snapshot.staff_updates if update.date == target_date]
+        if not updates:
+            raise LookupError(f"No staffing updates found for {target_date.isoformat()}.")
+        return updates
+
+
+class CoverageReportStrategy(WorkforceStrategy):
+    """Generate a staffing coverage report based on schedule and updates."""
+
+    def execute(
         self,
-        date_filter: Optional[str] = None,
-        role: Optional[str] = None,
-        shift: Optional[str] = None,
+        *,
+        date_filter: Optional[date] = None,
+        role_filter: Optional[str] = None,
+        shift_filter: Optional[str] = None,
+        **_: Any,
     ) -> WorkforceCoverageReport:
-        """Generate a workforce coverage report using schedule and update data."""
-
-        schedule = self.get_schedule()
-        updates = self.get_updates()
+        schedule = _load_schedule_snapshot()
+        updates = _load_updates_snapshot()
         adjusted_entries = self._apply_staff_updates(schedule, updates)
 
         baseline = self._baseline_counts(schedule.staff_schedule)
@@ -95,14 +115,10 @@ class WorkforceDataHook:
                 )
             )
 
-        parsed_date: Optional[date] = None
-        if date_filter:
-            try:
-                parsed_date = datetime.fromisoformat(date_filter).date()
-            except ValueError as exc:  # pragma: no cover - defensive validation
-                raise ValueError(f"Invalid date filter '{date_filter}': {exc}") from exc
-
-        filtered_insights = self._filter_insights(insights, parsed_date, role, shift)
+        filtered_insights = self._filter_insights(insights, date_filter, role_filter, shift_filter)
+        selected = filtered_insights or insights
+        if not selected:
+            raise LookupError("No staffing insights available for the supplied filters.")
 
         return WorkforceCoverageReport(
             generated_at=datetime.utcnow(),
@@ -110,12 +126,12 @@ class WorkforceDataHook:
                 start_date=schedule.date_range.start_date,
                 end_date=schedule.date_range.end_date,
             ),
-            insights=filtered_insights or insights,
+            insights=selected,
             metadata={
-                "filters.date": parsed_date.isoformat() if parsed_date else None,
-                "filters.role": role,
-                "filters.shift": shift,
-                "total_insights": str(len(filtered_insights or insights)),
+                "filters.date": date_filter.isoformat() if date_filter else None,
+                "filters.role": role_filter,
+                "filters.shift": shift_filter,
+                "total_insights": str(len(selected)),
             },
         )
 
@@ -247,4 +263,11 @@ class WorkforceDataHook:
         return filtered
 
 
-__all__ = ["WorkforceDataHook"]
+__all__ = [
+    "WorkforceStrategy",
+    "ScheduleStrategy",
+    "UpdatesStrategy",
+    "DailyStaffStrategy",
+    "DailyStaffUpdatesStrategy",
+    "CoverageReportStrategy",
+]

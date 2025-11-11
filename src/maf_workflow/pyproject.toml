@@ -10,13 +10,11 @@ readme = "README.md"
 requires-python = ">=3.13, <4.0"
 
 dependencies = [
-    "agent-framework>=1.0.0b251108",
+    "agent-framework",
     "azure-identity>=1.25.1",
     "fastapi>=0.119.1",
-    "fastmcp>=0.1.0",
     "mcp>=0.1.0",
     "pydantic",
-    "semantic-kernel>=1.35.3,<2.0.0",
     "python-dotenv",
     "uvicorn>=0.38.0",
     "azure-ai-projects",
@@ -46,10 +44,10 @@ docs = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "."}
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
 include = ["*"]
 namespaces = true
 
@@ -92,13 +90,6 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 line_length = 100
-
-[tool.uv.sources]
-
-[tool.uv.sources.azure-ai-projects]
-git = "https://github.com/Azure/azure-sdk-for-python.git"
-rev = "feature/azure-ai-projects/2.0.0b1"
-subdirectory = "sdk/ai/azure-ai-projects"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

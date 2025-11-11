@@ -1,0 +1,25 @@
+kind: Workflow
+name: schedule_allocation_end_to_end
+description: Full orchestration path that extends the quick review with coordination and reporting.
+trigger:
+  kind: OnConversationStart
+  id: allocation_trigger
+  actions:
+    - kind: InvokeSubWorkflow
+      id: run_quick_review
+      workflow: quick_schedule_review
+      resultProperty: Turn.quickSummary
+    - kind: SendActivity
+      id: share_quick_summary
+      activity: =Concatenate("Quick assessment summary:\n", Turn.quickSummary)
+    - kind: InvokeAgent
+      id: orchestrator
+      agent: Workflow Orchestrator
+      resultProperty: Turn.orchestrationPlan
+    - kind: InvokeAgent
+      id: reporter
+      agent: Operations Reporter
+      resultProperty: Turn.finalReport
+    - kind: SendActivity
+      id: finalize_report
+      activity: =Concatenate("Final allocation report generated.")
